@@ -10,6 +10,8 @@ Nécessite:
 3. python3 pos_tagging_with_banglanltk.py
 	- extraction des pos, avec les bibliothèques **bnlp** et **banglanltk** en format Corpus du module bn_eval_basique
 	- calcul et affichage de l'accuracy 
+4. creation des fichiers bn_train_corpus.conllu et bn_dev_corpus.conllu 
+	- conversion spacy échoué
 
 	
 
