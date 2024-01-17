@@ -1,20 +1,17 @@
 from pprint import pprint
 import random
-# import bn_eval_basique as ben
-# import bn_eval_basique.Sentence
 import bn_eval_basique
 from aksharamukha import transliterate
 
-'''  convert spacy : python -m spacy convert input_file output_dir '''
-# transliteration des termes extrait
+
+# transliteration 
 def translit(word):
     translit = transliterate.process("Bengali", "IAST", word, nativize = True, pre_options = [], post_options = [])
 
     return translit
 
 
-
-# export train dev conllu
+# export train et dev  en fichier conllu
 def sentence_to_conll(sent, corpusType:str) -> str:
     result = f"# sent_id = {sent.sent_id}\n"
     text = " ".join([tok.form for tok in sent.tokens])
@@ -30,14 +27,12 @@ def sentence_to_conll(sent, corpusType:str) -> str:
     return result
 
 
-
+# lecture et construction de Corpus - corpus annoté (git) 
 def read_nltr_corpus(textFile):
     pos_dict  = extract_pos_equivalence('../pos/bnlp_pos.txt')
     tokens = []
-    sentences = []# from bn_eval_basique import Corpus, Sentence, Token
+    sentences = []
     sid = 1
-    
-    # vocab_list = []
     with open(textFile, 'r') as f:
         file = f.readlines()
         
@@ -55,14 +50,12 @@ def read_nltr_corpus(textFile):
                     tokens.append(bn_eval_basique.Token(word, pos_spacy, True))
         if len(tokens) != 0:
             sentences.append(bn_eval_basique.Sentence(sent_id='sent_'+str(sid), tokens=tokens))
-            # sentence_to_conll(bn_eval_basique.Sentence(sent_id='sent_'+str(sid), tokens=tokens))
             tokens=[]
             sid +=1
             
-    # print(len(sentences))
     return bn_eval_basique.Corpus(sentences)
     
-# dictionnaire équivalence 
+# dictionnaire  pos bnlp équivalence 
 def extract_pos_equivalence(fileTxtPOS):
     bnlp_pos = {}
     with open (fileTxtPOS) as f:
@@ -80,7 +73,7 @@ def main():
     random.seed(42)
     random.shuffle(whole_corpus)
     split_index = int(0.8 * len(whole_corpus))
-    # création train et dev .conllu
+    # création train et dev .conllu à partir du corpus annoté 
     train_set = whole_corpus[:split_index]
     for sent in train_set:
         sentence_to_conll(sent, "train")
@@ -98,4 +91,3 @@ if __name__ == "__main__":
     
     
     
-# from bn_eval_basique import Corpus, Sentence, Token

@@ -4,43 +4,20 @@ from typing import List, Union, Dict, Set, Optional, Tuple
 from pathlib import Path
 from dataclasses import dataclass
 from sklearn.preprocessing import LabelEncoder
-
 from spacy import Language as SpacyPipeline
 from spacy.tokens import Token as SpacyToken, Doc as SpacyDoc
 import spacy
-# import bn_core_news_sm
 from pyJoules.energy_meter import measure_energy
-
 from sklearn.metrics import classification_report
-
 from pprint import pprint
 from boostsa import Bootstrap
-
 import pos_tagging_with_banglanltk
 import extract_train_corpus
 
 '''
 Nécessite: 
 1. sudo chmod -R a+r /sys/class/powercap/intel-rapl
-2. 
-
-
-- beaucoup d'exploration théorique malheuresement pas le temps de mettre en pratique
-
-bangla NLTK 
-COMPARe pos 
-- see git Sandra groupe
-- see steps 
-- start report : 
-    - tools 
-    - 
-
-
-
--------------------------------------------------------------
-
-1. sudo chmod -R a+r /sys/class/powercap/intel-rapl
-
+2. Essai adaptation Spacy , mais avec modèle entraîné par hindi
 '''
 
 @dataclass
@@ -60,14 +37,13 @@ class Sentence:
 class Corpus:
     sentences: List[Sentence]
 
-
+# lecture fichier conllu
 def read_conll(path: Path, vocabulaire: Optional[Set[str]] = None) -> Corpus:
     sentences: List[Sentence] = []
     tokens: List[Token] = []
     sid = ""
     with open(path) as f:
         for line in f:
-        # for line in islice(f, 0, 50):  ## del
             line = line.strip()
             if line.startswith("# sent_id =" ):
                 sid = line.split(" ")[-1]
@@ -88,14 +64,13 @@ def read_conll(path: Path, vocabulaire: Optional[Set[str]] = None) -> Corpus:
                         tokens.append(Token(form, tag, is_oov))
     return Corpus(sentences)
 
-
+# vocabulaire
 def build_vocabulaire(corpus: Corpus) -> Set[str]:
     return {tok.form for sent in corpus.sentences for tok in sent.tokens}
 
 
 def sentence_to_doc(sentence: Sentence, vocab) -> SpacyDoc:
     words = [tok.form for tok in sentence.tokens]
-    # print(f'words = {words}') # del
     return SpacyDoc(vocab, words=words)
 
 
@@ -118,7 +93,7 @@ def tag_corpus_spacy(corpus: Corpus, model_spacy: SpacyPipeline) -> Corpus:
         sentences.append(doc_to_sentence(doc, sentence))
     return Corpus(sentences)
 
-
+# calcul accuracy
 def compute_accuracy(corpus_gold: Corpus, corpus_test: Corpus, subcorpus: Optional[str] = None) -> Tuple[float, float]:
     nb_ok = 0
     nb_total = 0
@@ -126,12 +101,8 @@ def compute_accuracy(corpus_gold: Corpus, corpus_test: Corpus, subcorpus: Option
     oov_total = 0
     for sentence_gold, sentence_test in zip(
         corpus_gold.sentences, corpus_test.sentences):
-        # # print("sentence gold : ")
-        # print(sentence_gold, '\n')
-        # print(sentence_test, '\n\n')
         if subcorpus is None or subcorpus in sentence_gold.sent_id: 
             for token_gold, token_test in zip(sentence_gold.tokens, sentence_test.tokens):
-                # print(f'token gold = {token_gold} \ntoken test = {token_test}\n\n')
                 assert token_gold.form == token_test.form
                 if token_gold.tag == token_test.tag:
                     nb_ok += 1
@@ -143,6 +114,7 @@ def compute_accuracy(corpus_gold: Corpus, corpus_test: Corpus, subcorpus: Option
     
     return nb_ok / nb_total, oov_ok / oov_total
 
+# Impression du classification report
 def print_report(corpus_gold: Corpus, corpus_test: Corpus):
     ref = [tok_gold.tag for sent_gold, sent_test in zip(corpus_gold.sentences, corpus_test.sentences)
            for tok_gold, tok_test in zip(sent_gold.tokens, sent_test.tokens)]
@@ -176,23 +148,14 @@ def get_scores(corpus_gold):
             
     
     
-    
-"""    MAIN    """   
-    
-### Hindi corpus ###
+ 
 def main():
     print("Veuillez noter que le programme nécéssite la commande suivante pour pyJoules :\
             sudo chmod -R a+r /sys/class/powercap/intel-rapl \nEn cours de traitement...")
     
-    
-    # # """  read conll """
-    # bengali_test = read_conll("corpus/bn_bru-ud-test.conllu")
-    # # bangla_train = extract_train_corpus.read_nltr_corpus('corpus/nltr_pos_tags_bangla_pos_tagger.txt')
-    # # # pprint(bangla_train)
-    # # # pprint(bengali_test)
     try: 
     
-    ### 1. Spacy Model comparison  bn et hindi 
+        ### 1. Spacy Model comparison  bn et hindi 
     
         corpus_train_hi = read_conll("../corpus/hindi/hi_hdtb-ud-train.conllu")
         vocab_train = build_vocabulaire(corpus_train_hi)
@@ -202,9 +165,7 @@ def main():
         
         ## 2. Train with corpus nltr
         
-        # corpus_train = pos_tagging_with_banglanltk.format_banglanltk_pos('../corpus/bengali/bn_connll_txt.txt')
         corpus_train_nltr = extract_train_corpus.read_nltr_corpus('../corpus/bengali/bn_nltr_pos_corpus.txt')
-        ''' build vocab before testing '''
         vocab = build_vocabulaire(corpus_train_nltr)
         corpus_gold2 = read_conll("../corpus/bengali/bn_bru-ud-test.conllu", vocabulaire=vocab)
         get_scores(corpus_gold2)
@@ -228,24 +189,9 @@ def main():
         pass
     
             
-                       
-                       
-    '''  train corpus founs on git '''
-    # 1. hindi Corus- stem
-    # ben text corupus stem -> compare results 
-    
-                 
+              
        
 if __name__ == "__main__":
     main()
 
 
-
-'''
-https://github.com/banglakit/spacy-models?tab=readme-ov-file
-
-entrainer sur l'hindi  (train + dev + test )
-accuracy sur bengali ? (test) ?
-- corpus IIIT Hyd
-avec transliteration
-'''

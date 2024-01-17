@@ -1,4 +1,3 @@
-# compare banglanltk
 
 import banglanltk
 import csv
@@ -8,16 +7,16 @@ import regex
 import bn_eval_basique
 from bnlp import BengaliPOS
 from sklearn.metrics import classification_report
+import time
 
 
 
-
+# extraction pos du corpus test conllu - avec banglanltk   
 def format_banglanltk_pos(filepath):
     tokens = []
     sentences = []
     sid = ""
     spacy_bangla_dict = {}   
-    # récupère équivalence de POS banglanltk
     with open('../pos/banglanltk_pos.txt', 'r', newline='', encoding='utf-8') as file:
         reader = csv.reader(file, delimiter='\t')
         for row in reader:
@@ -42,8 +41,10 @@ def format_banglanltk_pos(filepath):
                 tokens=[]
 
     return bn_eval_basique.Corpus(sentences)
+
+
     
-# format pos bnlp     
+# extraction pos du corpus test conllu - avec bnlp     
 def format_bnlp_pos(filePath):
     bn_pos = BengaliPOS()
     tokens = []
@@ -101,27 +102,18 @@ def main() :
     bnlp_Corpus = format_bnlp_pos('../corpus/bengali/bn_connll_txt.txt')
     gold_corpus = bn_eval_basique.read_conll('../corpus/bengali/bn_bru-ud-test.conllu')
     
-    for sentbnlp, sentGold in zip(banglanltk_Corpus.sentences, gold_corpus.sentences):
-        print(sentbnlp)
-        print(sentGold, "\n\n")
-   
-    
     accuracy, classification_report_str = calculate_accuracy_and_report(gold_corpus, banglanltk_Corpus)
-    print("Impression de résultat : gold_corpus vs. annotation banglanltk")
+    print("Annotation banglanltk vs. gold_corpus\nImpression de résultat : ")
     print(f"Accuracy: {accuracy:.2f}%")
     print("Classification Report:")
     print(classification_report_str)
             
     accuracy, classification_report_str = calculate_accuracy_and_report(gold_corpus, bnlp_Corpus)
-    print("Impression de résultat : gold_corpus vs. annotation bnlp")
+    print("Annotation BNLP vs. gold_corpus\nImpression de résultat")
     print(f"Accuracy: {accuracy:.2f}%")
     print("Classification Report:")
     print(classification_report_str)
             
-
-
-    
-    
     
 
    
